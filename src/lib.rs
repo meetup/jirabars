@@ -50,19 +50,17 @@ struct Ref {
 }
 
 fn authenticated(request: &lando::Request, secret: &String) -> bool {
-    let headers = request.headers().clone();
-    if let (Some(event), Some(signature)) = (
-        headers.get("X-Github-Event"),
-        headers.get("X-Hub-Signature"),
-    ) {
-        let sbytes = secret.as_bytes();
-        let mut mac = Hmac::new(Sha1::new(), &sbytes);
-        mac.input(&request.body());
-        // constant time comparison
-        mac.result() == MacResult::new(&sbytes)
-    } else {
-        false
-    }
+    request
+        .headers()
+        .get("X-Hub-Signature")
+        .iter()
+        .any(|signature| {
+            let sbytes = secret.as_bytes();
+            let mut mac = Hmac::new(Sha1::new(), &sbytes);
+            mac.input(&request.body());
+            // constant time comparison
+            mac.result() == MacResult::new(&sbytes)
+        })
 }
 
 gateway!(|request, _| {
