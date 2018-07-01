@@ -1,4 +1,4 @@
-# jirabars [![Build Status](https://travis-ci.org/meetup/jirabars.svg?branch=master)](https://travis-ci.org/meetup/jirabars)
+# jirabars [![Build Status](https://travis-ci.org/meetup/jirabars.svg?branch=master)](https://travis-ci.org/meetup/jirabars) [![Coverage Status](https://coveralls.io/repos/github/meetup/jirabars/badge.svg?branch=master)](https://coveralls.io/github/meetup/jirabars?branch=master)
 
 > like handlebars but for jira applied to github pr bodies
 
