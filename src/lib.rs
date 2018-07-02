@@ -12,6 +12,7 @@ extern crate serde_json;
 extern crate envy;
 #[macro_use]
 extern crate lazy_static;
+extern crate hex;
 extern crate regex;
 
 // Third party
@@ -19,6 +20,7 @@ use crypto::hmac::Hmac;
 use crypto::mac::Mac;
 use crypto::mac::MacResult;
 use crypto::sha1::Sha1;
+use hex::FromHex;
 use lando::RequestExt;
 
 mod github;
@@ -38,12 +40,14 @@ fn authenticated(request: &lando::Request, secret: &String) -> bool {
         .headers()
         .get("X-Hub-Signature")
         .iter()
+        .filter_map(|value| {
+            // strip off `sha1=` and get hex bytes
+            Vec::from_hex(value.to_str().expect("invalid header")[5..].as_bytes()).ok()
+        })
         .any(|signature| {
-            // strip off `sha1=`
-            let signature_value = &signature.to_str().unwrap()[5..signature.len()];
             let mut mac = Hmac::new(Sha1::new(), &secret.as_bytes());
             mac.input(&request.body());
-            mac.result() == MacResult::new(&signature_value.as_bytes())
+            mac.result() == MacResult::new(&signature)
         })
 }
 
@@ -61,9 +65,6 @@ gateway!(|request, _| {
                 &payload.pull_request.body.unwrap_or_default(),
             );
             println!("updated {:?}", updated);
-            for patched in updated {
-                //github::patch(&config.github_token, &payload.pull_request.url, &patched);
-            }
         }
     } else {
         eprintln!("recieved unauthenticated request");
@@ -71,3 +72,17 @@ gateway!(|request, _| {
 
     Ok(lando::Response::new(()))
 });
+
+#[cfg(test)]
+mod tests {
+    use super::authenticated;
+    use super::lando;
+
+    #[test]
+    fn missing_header_is_authenticated() {
+        assert!(!authenticated(
+            &lando::Request::new("{}".into()),
+            &"secret".to_string()
+        ))
+    }
+}
