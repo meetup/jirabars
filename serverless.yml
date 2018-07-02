@@ -22,7 +22,7 @@ package:
   exclude:
     - ./**
 functions:
-  hello:
+  webhook:
     handler: liblambda.handler
     package:
       include:
