@@ -20,11 +20,12 @@ This is a rust application deployed using ⚡ [serverless](https://serverless.co
 
 This lambda is configured through its environment variables.
 
-| Name                    | Description                                     |
-|-------------------------|-------------------------------------------------|
-| `GITHUB_WEBHOOK_SECRET` | shared secret used to authenticate requests     |
-| `JIRA_HOST`             | jira installation host                          |
-| `JIRA_USERNAME`    | username used to authenticate jira api requests      |
-| `JIRA_PASSWORD`       | passworded used to authenticate jira api requests |
+| Name                    | Description                                       |
+|-------------------------|---------------------------------------------------|
+| `GITHUB_TOKEN`          | token used to update github pull request          |
+| `GITHUB_WEBHOOK_SECRET` | shared secret used to authenticate requests       |
+| `JIRA_HOST`             | jira installation host                            |
+| `JIRA_USERNAME`         | username used to authenticate jira api requests   |
+| `JIRA_PASSWORD`         | passworded used to authenticate jira api requests |
 
 Run `AWS_PROFILE=prod make deploy` to deploy.

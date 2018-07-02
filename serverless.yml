@@ -11,6 +11,7 @@ provider:
     JIRA_HOST: '${env:JIRA_HOST}'
     JIRA_USERNAME: '${env:JIRA_USERNAME}'
     JIRA_PASSWORD: '${env:JIRA_PASSWORD}'
+    GITHUB_TOKEN: '${env:GITHUB_TOKEN}'
 plugins:
   - serverless-rust
 custom:

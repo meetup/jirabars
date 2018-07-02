@@ -1,4 +1,5 @@
 // Third party
+use goji::{Credentials, Jira};
 use regex::Regex;
 
 struct Issue {
@@ -6,6 +7,36 @@ struct Issue {
   url: String,
   summary: String,
   description: String,
+}
+
+pub fn body(
+  host: String,
+  user: String,
+  pass: String,
+  branch: &String,
+  body: &String,
+) -> Option<String> {
+  keys(branch).and_then(|extracted| {
+    let jira =
+      Jira::new(host.clone(), Credentials::Basic(user, pass)).expect("failed to initialize client");
+    match jira.search().iter(
+      format!("issuekey in ({keys})", keys = extracted.join(",")),
+      &Default::default(),
+    ) {
+      Ok(issues) => issues.fold(None as Option<String>, |_, issue| {
+        render(
+          body,
+          &Issue {
+            key: issue.key.clone(),
+            url: format!("{host}/browse/{key}", host = host.as_str(), key = issue.key),
+            summary: issue.summary().unwrap_or_else(|| String::new()),
+            description: issue.description().unwrap_or_else(|| String::new()),
+          },
+        )
+      }),
+      _ => None,
+    }
+  })
 }
 
 fn render(body: &String, issue: &Issue) -> Option<String> {
