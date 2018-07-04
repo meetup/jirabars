@@ -27,7 +27,10 @@ install: |
     `RUSTFLAGS="--cfg procmacro2_semver_exempt" cargo install  --force --version 0.6.2  cargo-tarpaulin`
   fi
 
-script: cargo test
+script:
+  - cargo test
+  # packaging here allows for caching of build artifacts for future builds
+  - make package
 
 after_success:
   # report coverage to coveralls
