@@ -24,6 +24,7 @@ pub fn body(
       &Default::default(),
     ) {
       Ok(issues) => issues.fold(None as Option<String>, |_, issue| {
+        println!("processing issue {key}", key = issue.key);
         render(
           body,
           &Issue {
@@ -34,7 +35,10 @@ pub fn body(
           },
         )
       }),
-      _ => None,
+      Err(e) => {
+        println!("error fetching jira issues: {err}", err = e);
+        None
+      }
     }
   })
 }
