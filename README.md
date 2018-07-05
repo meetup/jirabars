@@ -7,6 +7,25 @@
 This application is a github webhook handler for pull request events that applies
 jira informaiton to pull request body placeholders
 
+## 🔌 install
+
+You can install this application as a webook under your github repository's settings.
+
+Visit `https://github.com/{owner}/{repo}/settings/hooks/new` to install a new
+github webhook.
+
+Enter this lambda's api gateway url.
+
+Select Content type `application/json`
+
+Enter this lambda's webhook secret
+
+Select `Let me select individual events`
+
+Select `Pull Requests`
+
+Click `Add webook`
+
 ## 👩‍🏭 development
 
 This is a [rustlang](https://www.rust-lang.org/en-US/) application.
