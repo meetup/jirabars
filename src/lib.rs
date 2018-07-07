@@ -57,14 +57,15 @@ gateway!(|request, _| {
     if authenticated(&request, &config.github_webhook_secret) {
         if let Ok(Some(payload)) = request.payload::<github::Payload>() {
             println!("{:?}", payload);
-            let updated = jira::body(
+            if let Some(updated) = jira::body(
                 config.jira_host,
                 config.jira_username,
                 config.jira_password,
                 &payload.pull_request.head.branch,
                 &payload.pull_request.body.unwrap_or_default(),
-            );
-            println!("updated {:?}", updated);
+            ) {
+                println!("updated {:?}", updated);
+            }
         }
     } else {
         eprintln!("recieved unauthenticated request");
