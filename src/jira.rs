@@ -2,6 +2,9 @@
 use goji::{Credentials, Jira};
 use regex::Regex;
 
+// Ours
+use incr;
+
 struct Issue {
   key: String,
   url: String,
@@ -37,6 +40,9 @@ pub fn body(
       }),
       Err(e) => {
         println!("error fetching jira issues: {err}", err = e);
+        for m in incr("jirabars.fail", vec!["reason:jira_api".into()]) {
+          println!("{}", m);
+        }
         None
       }
     }

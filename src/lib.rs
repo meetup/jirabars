@@ -15,6 +15,9 @@ extern crate lazy_static;
 extern crate hex;
 extern crate regex;
 
+// Std
+use std::time::{SystemTime, UNIX_EPOCH};
+
 // Third party
 use crypto::hmac::Hmac;
 use crypto::mac::Mac;
@@ -49,6 +52,18 @@ fn authenticated(request: &lando::Request, secret: &String) -> bool {
             mac.input(&request.body());
             mac.result() == MacResult::new(&signature)
         })
+}
+
+pub fn incr(metric_name: &str, tags: Vec<String>) -> Option<String> {
+    SystemTime::now().duration_since(UNIX_EPOCH).ok().map(|d| {
+        format!(
+            "MONITORING|{timestamp}|{value}|count|{metric_name}|#{tags}",
+            timestamp = d.as_secs(),
+            value = 1,
+            metric_name = metric_name,
+            tags = tags.join(",")
+        )
+    })
 }
 
 #[cfg_attr(tarpaulin, skip)]
