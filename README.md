@@ -14,17 +14,12 @@ You can install this application as a webook under your github repository's sett
 Visit `https://github.com/{owner}/{repo}/settings/hooks/new` to install a new
 github webhook.
 
-Enter this lambda's api gateway url.
-
-Select Content type `application/json`
-
-Enter this lambda's webhook secret
-
-Select `Let me select individual events`
-
-Select `Pull Requests`
-
-Click `Add webook`
+- [ ] Enter this lambda's api gateway url.
+- [ ] Select Content type `application/json`
+- [ ] Enter this lambda's webhook secret
+- [ ] Select `Let me select individual events`
+  - [ ] Select `Pull Requests`
+- [ ] Click `Add webook`
 
 ## 👩‍🏭 development
 
