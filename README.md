@@ -24,7 +24,7 @@ github webhook.
 ## 👩‍🏭 development
 
 This is a [rustlang](https://www.rust-lang.org/en-US/) application.
-Go grab yourself a copy with [rustup](https://rustup.rs/).
+Go grab yourself a copy of [rustup](https://rustup.rs/).
 
 ## 🚀 deployment
 
