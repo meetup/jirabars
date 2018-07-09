@@ -42,4 +42,7 @@ This lambda is configured through its environment variables.
 | `JIRA_USERNAME`         | username used to authenticate jira api requests   |
 | `JIRA_PASSWORD`         | passworded used to authenticate jira api requests |
 
+> 💡 the `GITHUB_TOKEN` env var must have [repo scope](https://developer.github.com/apps/building-oauth-apps/understanding-scopes-for-oauth-apps/#available-scopes) in order to properly delete branches for the repository the webhook is configured
+for.
+
 Run `AWS_PROFILE=prod make deploy` to deploy.
