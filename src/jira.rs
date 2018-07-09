@@ -61,10 +61,7 @@ fn render(body: &String, issue: &Issue) -> Option<String> {
       .replace_all(
         body,
         format!(
-          "[{key}]({url}) - __{summary}__
-
-                {description}
-                ",
+          "[{key}]({url}) - __{summary}__\n\n{description}",
           key = issue.key,
           url = issue.url,
           summary = issue.summary,
