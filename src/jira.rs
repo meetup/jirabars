@@ -3,7 +3,7 @@ use goji::{Credentials, Jira};
 use regex::Regex;
 
 // Ours
-use incr;
+use metric::incr;
 
 struct Issue {
   key: String,
@@ -18,7 +18,7 @@ pub fn body(
   pass: String,
   branch: &String,
   body: &String,
-) -> Option<String> {
+) -> Option<(Vec<String>, String)> {
   keys(branch).and_then(|extracted| {
     let jira =
       Jira::new(host.clone(), Credentials::Basic(user, pass)).expect("failed to initialize client");
@@ -26,7 +26,7 @@ pub fn body(
       format!("issuekey in ({keys})", keys = extracted.join(",")),
       &Default::default(),
     ) {
-      Ok(issues) => issues.fold(None as Option<String>, |_, issue| {
+      Ok(issues) => issues.fold(None as Option<(Vec<String>, String)>, |_, issue| {
         println!("processing issue {key}", key = issue.key);
         render(
           body,
@@ -36,7 +36,7 @@ pub fn body(
             summary: issue.summary().unwrap_or_else(|| String::new()),
             description: issue.description().unwrap_or_else(|| String::new()),
           },
-        )
+        ).map(|rendered| (extracted.clone(), rendered))
       }),
       Err(e) => {
         println!("error fetching jira issues: {err}", err = e);

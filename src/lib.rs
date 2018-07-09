@@ -15,19 +15,16 @@ extern crate lazy_static;
 extern crate hex;
 extern crate regex;
 
-// Std
-use std::time::{SystemTime, UNIX_EPOCH};
-
 // Third party
 use crypto::hmac::Hmac;
-use crypto::mac::Mac;
-use crypto::mac::MacResult;
+use crypto::mac::{Mac, MacResult};
 use crypto::sha1::Sha1;
 use hex::FromHex;
 use lando::RequestExt;
 
 mod github;
 mod jira;
+mod metric;
 
 #[derive(Deserialize)]
 struct Config {
@@ -54,16 +51,29 @@ fn authenticated(request: &lando::Request, secret: &String) -> bool {
         })
 }
 
-pub fn incr(metric_name: &str, tags: Vec<String>) -> Option<String> {
-    SystemTime::now().duration_since(UNIX_EPOCH).ok().map(|d| {
-        format!(
-            "MONITORING|{timestamp}|{value}|count|{metric_name}|#{tags}",
-            timestamp = d.as_secs(),
-            value = 1,
-            metric_name = metric_name,
-            tags = tags.join(",")
-        )
-    })
+fn incr_auth_fail() -> Option<String> {
+    metric::incr(
+        "jirabars.fail",
+        vec!["reason:invalid_authentication".into()],
+    )
+}
+
+fn incr_patched(repo: &String, branch: &String) -> Option<String> {
+    metric::incr(
+        "jirabars.patched",
+        vec![format!("repo:{}", repo), format!("branch:{}", branch)],
+    )
+}
+
+fn incr_patch_fail(reason: &String, repo: &String, branch: &String) -> Option<String> {
+    metric::incr(
+        "jirabars.fail",
+        vec![
+            format!("repo:{}", repo),
+            format!("branch:{}", branch),
+            format!("reason:{}", reason),
+        ],
+    )
 }
 
 #[cfg_attr(tarpaulin, skip)]
@@ -71,19 +81,38 @@ gateway!(|request, _| {
     let config = envy::from_env::<Config>()?;
     if authenticated(&request, &config.github_webhook_secret) {
         if let Ok(Some(payload)) = request.payload::<github::Payload>() {
-            println!("{:?}", payload);
-            if let Some(updated) = jira::body(
-                config.jira_host,
-                config.jira_username,
-                config.jira_password,
-                &payload.pull_request.head.branch,
-                &payload.pull_request.body.unwrap_or_default(),
-            ) {
-                println!("updated {:?}", updated);
+            if payload.updatable() {
+                if let Some((_, updated)) = jira::body(
+                    config.jira_host,
+                    config.jira_username,
+                    config.jira_password,
+                    &payload.pull_request.head.branch,
+                    &payload.pull_request.body.clone().unwrap_or_default(),
+                ) {
+                    match github::patch(&config.github_token, &payload.pull_url(), &updated) {
+                        Ok(_) => {
+                            for metric in incr_patched(
+                                &payload.pull_request.head.repo.full_name,
+                                &payload.pull_request.head.branch,
+                            ) {
+                                println!("{}", metric);
+                            }
+                        }
+                        Err(e) => {
+                            for metric in incr_patch_fail(
+                                &e.to_string(),
+                                &payload.pull_request.head.repo.full_name,
+                                &payload.pull_request.head.branch,
+                            ) {
+                                println!("{}", metric);
+                            }
+                        }
+                    }
+                }
             }
         }
     } else {
-        eprintln!("recieved unauthenticated request");
+        incr_auth_fail();
     }
 
     Ok(lando::Response::new(()))
@@ -91,8 +120,7 @@ gateway!(|request, _| {
 
 #[cfg(test)]
 mod tests {
-    use super::authenticated;
-    use super::lando;
+    use super::{authenticated, lando};
 
     #[test]
     fn missing_header_is_authenticated() {
