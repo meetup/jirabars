@@ -150,8 +150,7 @@ mod tests {
       Some(
         "[FOO-123](https://company.atlassian.net/browse/FOO-123) - __fix the thing__
 
-                thing is broke
-                "
+thing is broke"
           .to_string()
       )
     )
