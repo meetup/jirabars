@@ -3,8 +3,8 @@ provider:
   name: aws
   runtime: python3.6
   stackTags:
-    businessUnit: 'core-services'
-    productName: '${self:service}'
+    'mup:owner': 'core-services'
+    'mup:productName': '${self:service}'
   memorySize: 128
   environment:
     GITHUB_WEBHOOK_SECRET: '${env:GITHUB_WEBHOOK_SECRET}'
