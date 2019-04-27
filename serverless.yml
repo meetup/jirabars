@@ -3,7 +3,7 @@ provider:
   name: aws
   runtime: python3.6
   stackTags:
-    'mup:owner': 'core-services'
+    'mup:owner': 'platform-services'
     'mup:productName': '${self:service}'
   memorySize: 128
   environment:
