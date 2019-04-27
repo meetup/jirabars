@@ -16,9 +16,11 @@ extern crate hex;
 extern crate regex;
 
 // Third party
-use crypto::hmac::Hmac;
-use crypto::mac::{Mac, MacResult};
-use crypto::sha1::Sha1;
+use crypto::{
+    hmac::Hmac,
+    mac::{Mac, MacResult},
+    sha1::Sha1,
+};
 use hex::FromHex;
 use lando::RequestExt;
 
@@ -52,10 +54,7 @@ fn authenticated(request: &lando::Request, secret: &String) -> bool {
 }
 
 fn incr_auth_fail() -> Option<String> {
-    metric::incr(
-        "jirabars.fail",
-        vec!["reason:invalid_authentication".into()],
-    )
+    metric::incr("jirabars.fail", vec!["reason:invalid_authentication".into()])
 }
 
 fn incr_patched(repo: &String, branch: &String) -> Option<String> {
@@ -124,9 +123,6 @@ mod tests {
 
     #[test]
     fn missing_header_is_authenticated() {
-        assert!(!authenticated(
-            &lando::Request::new("{}".into()),
-            &"secret".to_string()
-        ))
+        assert!(!authenticated(&lando::Request::new("{}".into()), &"secret".to_string()))
     }
 }
