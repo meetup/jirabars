@@ -1,20 +1,3 @@
-// #[macro_use]
-// extern crate cpython;
-// extern crate crypto;
-// extern crate goji;
-// #[macro_use]
-// extern crate lando;
-// extern crate reqwest;
-// #[macro_use]
-// extern crate serde_derive;
-// #[macro_use]
-// extern crate serde_json;
-// extern crate envy;
-// #[macro_use]
-// extern crate lazy_static;
-// extern crate hex;
-// extern crate regex;
-
 use crypto::{
     hmac::Hmac,
     mac::{Mac, MacResult},
