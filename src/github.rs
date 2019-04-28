@@ -1,5 +1,6 @@
-// Third party
 use reqwest::{Client, Error};
+use serde_derive::Deserialize;
+use serde_json::json;
 
 #[derive(Deserialize, Debug)]
 pub struct Payload {
@@ -44,14 +45,11 @@ pub struct Repository {
     pub full_name: String,
 }
 
-pub fn patch(token: &String, url: &String, body: &String) -> Result<(), Error> {
+pub fn patch(token: &str, url: &str, body: &str) -> Result<(), Error> {
     Client::new()
-        .expect("failed to initialize client")
         .patch(url)
-        .expect("failed to parse url")
-        .basic_auth("", Some(token.clone()))
+        .basic_auth("", Some(token.to_string()))
         .json(&json!({ "body": body }))
-        .expect("failed to encode body")
         .send()
         .map(|_| ())
 }

@@ -1,9 +1,7 @@
-// Third party
+use crate::metric::incr;
 use goji::{Credentials, Jira};
+use lazy_static::lazy_static;
 use regex::Regex;
-
-// Ours
-use metric::incr;
 
 struct Issue {
     key: String,
@@ -12,7 +10,7 @@ struct Issue {
     description: String,
 }
 
-pub fn body(host: String, user: String, pass: String, branch: &String, body: &String) -> Option<(Vec<String>, String)> {
+pub fn body(host: String, user: String, pass: String, branch: &str, body: &str) -> Option<(Vec<String>, String)> {
     keys(branch).and_then(|extracted| {
         let jira = Jira::new(host.clone(), Credentials::Basic(user, pass)).expect("failed to initialize client");
         match jira.search().iter(
@@ -22,19 +20,19 @@ pub fn body(host: String, user: String, pass: String, branch: &String, body: &St
             Ok(issues) => issues.fold(None as Option<(Vec<String>, String)>, |_, issue| {
                 println!("processing issue {key}", key = issue.key);
                 render(
-                    body,
+                    &body.to_string(),
                     &Issue {
                         key: issue.key.clone(),
                         url: format!("{host}/browse/{key}", host = host.as_str(), key = issue.key),
-                        summary: issue.summary().unwrap_or_else(|| String::new()),
-                        description: issue.description().unwrap_or_else(|| String::new()),
+                        summary: issue.summary().unwrap_or_else(String::new),
+                        description: issue.description().unwrap_or_else(String::new),
                     },
                 )
                 .map(|rendered| (extracted.clone(), rendered))
             }),
             Err(e) => {
                 println!("error fetching jira issues: {err}", err = e);
-                for m in incr("jirabars.fail", vec!["reason:jira_api".into()]) {
+                if let Some(m) = incr("jirabars.fail", vec!["reason:jira_api".into()]) {
                     println!("{}", m);
                 }
                 None
@@ -43,7 +41,7 @@ pub fn body(host: String, user: String, pass: String, branch: &String, body: &St
     })
 }
 
-fn render(body: &String, issue: &Issue) -> Option<String> {
+fn render(body: &str, issue: &Issue) -> Option<String> {
     lazy_static! {
         static ref LONG: Regex = Regex::new("\\{\\{ JIRA_INFO \\}\\}").expect("invalid regex");
     }
@@ -65,7 +63,7 @@ fn render(body: &String, issue: &Issue) -> Option<String> {
         .to_string()
     });
 
-    Some(long.clone().unwrap_or_else(|| body.clone()))
+    Some(long.clone().unwrap_or_else(|| body.to_string()))
         .filter(|b| SHORT.is_match(b))
         .map(|body| {
             SHORT

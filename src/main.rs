@@ -1,28 +1,29 @@
-#[macro_use]
-extern crate cpython;
-extern crate crypto;
-extern crate goji;
-#[macro_use]
-extern crate lando;
-extern crate reqwest;
-#[macro_use]
-extern crate serde_derive;
-#[macro_use]
-extern crate serde_json;
-extern crate envy;
-#[macro_use]
-extern crate lazy_static;
-extern crate hex;
-extern crate regex;
+// #[macro_use]
+// extern crate cpython;
+// extern crate crypto;
+// extern crate goji;
+// #[macro_use]
+// extern crate lando;
+// extern crate reqwest;
+// #[macro_use]
+// extern crate serde_derive;
+// #[macro_use]
+// extern crate serde_json;
+// extern crate envy;
+// #[macro_use]
+// extern crate lazy_static;
+// extern crate hex;
+// extern crate regex;
 
-// Third party
 use crypto::{
     hmac::Hmac,
     mac::{Mac, MacResult},
     sha1::Sha1,
 };
 use hex::FromHex;
-use lando::RequestExt;
+use lambda_http::{lambda, IntoResponse, Request, RequestExt};
+use lambda_runtime::{error::HandlerError, Context};
+use serde_derive::Deserialize;
 
 mod github;
 mod jira;
@@ -37,7 +38,7 @@ struct Config {
     github_webhook_secret: String,
 }
 
-fn authenticated(request: &lando::Request, secret: &String) -> bool {
+fn authenticated(request: &Request, secret: &str) -> bool {
     request
         .headers()
         .get("X-Hub-Signature")
@@ -57,14 +58,14 @@ fn incr_auth_fail() -> Option<String> {
     metric::incr("jirabars.fail", vec!["reason:invalid_authentication".into()])
 }
 
-fn incr_patched(repo: &String, branch: &String) -> Option<String> {
+fn incr_patched(repo: &str, branch: &str) -> Option<String> {
     metric::incr(
         "jirabars.patched",
         vec![format!("repo:{}", repo), format!("branch:{}", branch)],
     )
 }
 
-fn incr_patch_fail(reason: &String, repo: &String, branch: &String) -> Option<String> {
+fn incr_patch_fail(reason: &str, repo: &str, branch: &str) -> Option<String> {
     metric::incr(
         "jirabars.fail",
         vec![
@@ -75,9 +76,12 @@ fn incr_patch_fail(reason: &String, repo: &String, branch: &String) -> Option<St
     )
 }
 
-#[cfg_attr(tarpaulin, skip)]
-gateway!(|request, _| {
-    let config = envy::from_env::<Config>()?;
+fn main() {
+    lambda!(template)
+}
+
+fn template(request: Request, _ctx: Context) -> Result<impl IntoResponse, HandlerError> {
+    let config = envy::from_env::<Config>().map_err(|e| HandlerError::from(e.to_string().as_str()))?;
     if authenticated(&request, &config.github_webhook_secret) {
         if let Ok(Some(payload)) = request.payload::<github::Payload>() {
             if payload.updatable() {
@@ -90,7 +94,7 @@ gateway!(|request, _| {
                 ) {
                     match github::patch(&config.github_token, &payload.pull_url(), &updated) {
                         Ok(_) => {
-                            for metric in incr_patched(
+                            if let Some(metric) = incr_patched(
                                 &payload.pull_request.head.repo.full_name,
                                 &payload.pull_request.head.branch,
                             ) {
@@ -98,7 +102,7 @@ gateway!(|request, _| {
                             }
                         }
                         Err(e) => {
-                            for metric in incr_patch_fail(
+                            if let Some(metric) = incr_patch_fail(
                                 &e.to_string(),
                                 &payload.pull_request.head.repo.full_name,
                                 &payload.pull_request.head.branch,
@@ -114,15 +118,15 @@ gateway!(|request, _| {
         incr_auth_fail();
     }
 
-    Ok(lando::Response::new(()))
-});
+    Ok(lambda_http::Response::new(()))
+}
 
 #[cfg(test)]
 mod tests {
-    use super::{authenticated, lando};
+    use super::*;
 
     #[test]
     fn missing_header_is_authenticated() {
-        assert!(!authenticated(&lando::Request::new("{}".into()), &"secret".to_string()))
+        assert!(!authenticated(&Request::new("{}".into()), "secret"))
     }
 }
